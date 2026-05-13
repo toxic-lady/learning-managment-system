@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Профіль викладача</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald&family=Lato&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            background: url(https://static.vecteezy.com/system/resources/previews/034/707/570/non_2x/ai-generated-ancient-greek-temple-free-photo.jpg) no-repeat center center fixed;
+            background-size: cover;
+        }
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 1em;
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2em auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+        nav {
+            display: flex;
+            gap: 1em;
+            margin-bottom: 2em;
+        }
+        nav button {
+            flex: 1;
+            padding: 0.8em;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        nav button.active {
+            background: #0056b3;
+        }
+        .tab {
+            display: none;
+        }
+        .tab.active {
+            display: block;
+        }
+        input, textarea, select, button {
+            padding: 0.6em;
+            margin: 0.5em 0;
+            display: block;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button.submit-btn {
+            background: #28a745;
+        }
+        .logout-btn {
+            position: absolute;
+            top: 1em;
+            right: 1em;
+            padding: 0.4em 0.8em;
+            font-size: 0.9em;
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            width: auto; /* <--- ось це прибирає розтягування */
+        }
+        .logout-btn:hover {
+            background: white;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Профіль викладача</h1>
+    <button onclick="logout()" class="logout-btn">Вийти</button>
+</header>
+<div class="container">
+    <nav>
+        <button onclick="showTab('add-content')">Додати лекції / завдання</button>
+        <button onclick="showTab('grade')">Оцінювання</button>
+        <button onclick="showTab('profile')">Мої дані</button>
+    </nav>
+
+    <div id="courses" class="tab active">
+        <select id="courseDropdown">
+            <option value="">Оберіть курс</option>
+        </select>
+    </div>
+
+    <div id="add-content" class="tab">
+        <form id="addContentForm" method="post" action="/proba_war_exploded/teacher/addContent">
+            <input type="hidden" name="courseId" id="courseId">
+
+            <label for="type">Тип:</label>
+            <select name="type" id="type" required>
+                <option value="Lecture">Лекція</option>
+                <option value="Assignment">Завдання</option>
+            </select>
+
+            <label for="title">Назва:</label>
+            <input type="text" name="title" id="title" required>
+
+            <label for="description">Опис:</label>
+            <textarea name="description" id="description" required></textarea>
+
+            <label for="dueDate">Кінцева дата (лише для завдань):</label>
+            <input type="date" name="dueDate" id="dueDate">
+
+            <button type="submit">Додати</button>
+        </form>
+    </div>
+
+    <div id="grade" class="tab">
+        <h2>Оцінювання студентів</h2>
+        <div>
+            <label for="gradeCourseDropdown">Оберіть курс:</label>
+            <select id="gradeCourseDropdown">
+                <option value="">Оберіть курс</option>
+            </select>
+
+            <label for="assignmentDropdown">Оберіть завдання:</label>
+            <select id="assignmentDropdown">
+                <option value="">Спочатку оберіть курс</option>
+            </select>
+        </div>
+
+        <div id="submissionsTableContainer"></div>
+    </div>
+
+    <div id="profile" class="tab">
+        <h2>Мої дані</h2>
+        <form id="updateProfileForm">
+            <label>ПІБ: <input type="text" id="fullName" name="fullName" required></label>
+            <label>Email: <input type="email" id="email" name="email" required></label>
+
+            <h4>Змінити пароль (необов’язково)</h4>
+            <label>Поточний пароль: <input type="password" id="currentPassword" name="currentPassword"></label>
+            <label>Новий пароль: <input type="password" id="newPassword" name="newPassword"></label>
+
+            <button type="submit">Оновити дані</button>
+        </form>
+        <div id="updateMessage"></div>
+    </div>
+</div>
+<script>
+    function showTab(tabId) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const courseDropdown = document.getElementById("courseDropdown");
+        const courseIdHidden = document.getElementById("courseId");
+
+        fetch("/proba_war_exploded/teacher/getCourses")
+            .then(response => response.json())
+            .then(data => {
+                console.log("Отримані курси:", data);
+                courseDropdown.innerHTML = '<option value="">Оберіть курс</option>';
+                data.forEach(course => {
+                    const option = document.createElement("option");
+                    option.value = course.id;
+                    option.textContent = course.name.trim();
+                    courseDropdown.appendChild(option);
+                });
+            })
+            .catch(error => console.error("Помилка отримання курсів:", error));
+
+        courseDropdown.addEventListener("change", () => {
+            console.log("Обраний курс:", courseDropdown.value);
+            courseIdHidden.value = courseDropdown.value;
+        });
+
+
+        fetch("/proba_war_exploded/user/getProfileData", {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Помилка: " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Профіль:", data);
+            })
+            .catch(error => {
+                console.error("Не вдалося отримати дані профілю:", error);
+            })
+
+        fetch("/proba_war_exploded/teacher/getCourses")
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(course => {
+                    const opt = document.createElement("option");
+                    opt.value = course.id;
+                    opt.textContent = course.name;
+                    gradeCourseDropdown.appendChild(opt);
+                });
+            });
+
+    });
+    fetch(`/proba_war_exploded/teacher/getAssignmentsWithSubmissions?courseId=2`, {
+        method: "GET",
+        credentials: "include"
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Помилка: " + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Assignments:", data);
+        })
+        .catch(error => {
+            console.error("Не вдалося отримати завдання:", error);
+        });
+
+
+    document.getElementById("updateProfileForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const formData = new URLSearchParams(new FormData(this));
+        fetch("/proba_war_exploded/user/updateProfile", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString()
+        })
+            .then(response => response.text())
+            .then(message => {
+                document.getElementById("updateMessage").textContent = message;
+            })
+            .catch(error => console.error("Помилка оновлення профілю:", error));
+    });
+
+    document.getElementById("addContentForm").addEventListener("submit", function (e) {
+        const courseDropdown = document.getElementById("courseDropdown");
+        const courseIdHidden = document.getElementById("courseId");
+        if (!courseDropdown.value) {
+            e.preventDefault();
+            alert("Будь ласка, виберіть курс перед відправленням.");
+        } else {
+            courseIdHidden.value = courseDropdown.value;
+        }
+    });
+    const gradeCourseDropdown = document.getElementById("gradeCourseDropdown");
+    const assignmentDropdown = document.getElementById("assignmentDropdown");
+    const submissionsTableContainer = document.getElementById("submissionsTableContainer");
+
+    gradeCourseDropdown.addEventListener("change", () => {
+        const courseId = gradeCourseDropdown.value;
+        if (!courseId) return;
+
+        fetch(`/proba_war_exploded/teacher/getAssignmentsWithSubmissions?courseId=${courseId}`)
+            .then(res => res.json())
+            .then(assignments => {
+                assignmentDropdown.innerHTML = '<option value="">Оберіть завдання</option>';
+                if (!assignments || assignments.length === 0) {
+                    assignmentDropdown.innerHTML = '<option value="">Немає доступних завдань</option>';
+                    submissionsTableContainer.innerHTML = "<p>Оберіть інший курс — для цього немає завдань.</p>";
+                    return;
+                }
+
+                assignments.forEach(a => {
+                    const opt = document.createElement("option");
+                    opt.value = a.id;
+                    opt.textContent = a.title;
+                    assignmentDropdown.appendChild(opt);
+                });
+            });
+    });
+
+    assignmentDropdown.addEventListener("change", () => {
+        const assignmentId = assignmentDropdown.value;
+        if (!assignmentId) return;
+
+        fetch(`/proba_war_exploded/teacher/getSubmissions?assignmentId=${assignmentId}`)
+            .then(res => res.json())
+            .then(submissions => {
+                let html = '<table><tr><th>Студент</th><th>Робота</th><th>Оцінка</th><th>Залишити відгук</th></tr>';
+                submissions.forEach(sub => {
+                    html += `
+                    <tr>
+                        <td>${sub.studentName}</td>
+                        <td>${sub.content}</td>
+                        <td><input type="number" min="0" max="100" data-submissionid="${sub.id}" class="grade-input" value="${sub.grade || ''}"></td>
+                        <td><input type="text" data-submissionid="${sub.id}" class="feedback-input" value="${sub.feedback || ''}"></td>
+                    </tr>`;
+                });
+                html += '</table><button onclick="submitGrades()">Зберегти оцінки</button>';
+                submissionsTableContainer.innerHTML = html;
+            });
+    });
+
+    function submitGrades() {
+        const grades = [];
+        document.querySelectorAll(".grade-input").forEach(input => {
+            const id = input.dataset.submissionid;
+            const grade = input.value;
+            const feedback = document.querySelector(`.feedback-input[data-submissionid="${id}"]`).value;
+            grades.push({ id, grade, feedback });
+        });
+
+        fetch("/proba_war_exploded/teacher/saveGrades", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(grades)
+        }).then(res => res.text())
+            .then(msg => alert(msg));
+    }
+    function logout() {
+        fetch('/logout', {
+            method: 'POST'
+        }).then(() => {
+            window.location.href = 'index.jsp';
+        }).catch(() => {
+            alert('Помилка при виході');
+        });
+    }
+
+</script>
+</body>
+</html>

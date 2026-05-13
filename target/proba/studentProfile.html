@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Профіль студента</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald&family=Lato&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            background: url(https://static.vecteezy.com/system/resources/previews/034/707/570/non_2x/ai-generated-ancient-greek-temple-free-photo.jpg) no-repeat center center fixed;
+            background-size: cover;
+        }
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 1em;
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2em auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+        nav {
+            display: flex;
+            gap: 1em;
+            margin-bottom: 2em;
+        }
+        nav button {
+            flex: 1;
+            padding: 0.8em;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        nav button.active {
+            background: #0056b3;
+        }
+        .tab {
+            display: none;
+        }
+        .tab.active {
+            display: block;
+        }
+        input, textarea, select, button {
+            padding: 0.6em;
+            margin: 0.5em 0;
+            display: block;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button.submit-btn {
+            background: #28a745;
+        }
+        .logout-btn {
+            position: absolute;
+            top: 1em;
+            right: 1em;
+            padding: 0.4em 0.8em;
+            font-size: 0.9em;
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            width: auto; /* <--- ось це прибирає розтягування */
+        }
+        .logout-btn:hover {
+            background: white;
+            color: black;
+        }
+        .accordion {
+            background-color: #fdc507;
+            cursor: pointer;
+            padding: 14px;
+            margin: 10px 0;
+            border: none;
+            outline: none;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .active, .accordion:hover {
+            background-color: #ffffff;
+        }
+
+        .panel {
+            padding: 0 18px;
+            display: none;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        .lecture, .assignment {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #333;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Профіль студента</h1>
+    <button onclick="logout()" class="logout-btn">Вийти</button>
+</header>
+
+<div class="container">
+    <nav>
+        <button onclick="showTab('myCourses')">Мої курси</button>
+        <button onclick="showTab('profile')">Мої дані</button>
+    </nav>
+    <!-- Вкладка: Мої дані -->
+    <div id="profile" class="tab">
+        <h2>Мої дані</h2>
+        <form id="updateProfileForm">
+            <label>ПІБ: <input type="text" id="fullName" name="fullName" required></label>
+            <label>Email: <input type="email" id="email" name="email" required></label>
+
+            <h4>Змінити пароль (необов’язково)</h4>
+            <label>Поточний пароль: <input type="password" id="currentPassword" name="currentPassword"></label>
+            <label>Новий пароль: <input type="password" id="newPassword" name="newPassword"></label>
+
+            <button type="submit">Оновити дані</button>
+        </form>
+        <div id="updateMessage"></div>
+    </div>
+
+
+<!-- Вкладка: Мої курси -->
+<div id="myCourses" class="tab">
+    <h2>Мої курси</h2>
+    <div id="coursesContainer"></div>
+</div>
+</div>
+<script>
+    function showTab(id) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch('/proba_war_exploded/GetProfileDataServlet')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("profileData").innerHTML = `
+            <p><strong>ПІБ:</strong> ${data.fullName}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+          `;
+            });
+
+        fetch('/proba_war_exploded/user/getMyCourses')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById("coursesContainer");
+                container.innerHTML = "";
+                data.forEach((course, index) => {
+                    const accordionButton = document.createElement("button");
+                    accordionButton.className = "accordion";
+                    accordionButton.innerText = course.courseName;
+                    accordionButton.addEventListener("click", function () {
+                        this.classList.toggle("active");
+                        const panel = this.nextElementSibling;
+                        panel.style.display = panel.style.display === "block" ? "none" : "block";
+                    });
+
+                    const panel = document.createElement("div");
+                    panel.className = "panel";
+                    panel.style.display = "none";
+
+                    const lecturesHTML = course.lectures.length > 0
+                        ? course.lectures.map(l => `<div class="lecture"><strong>${l.title}</strong></div>`).join('')
+                        : `<div>Немає лекцій</div>`;
+
+                    const assignmentsHTML = course.assignments.length > 0
+                        ? course.assignments.map(a => `
+                    <div class="assignment">
+                        <strong>${a.title}</strong><br>
+                        Статус: ${a.status}<br>
+                        ${a.filePath ? `<a href="/proba_war_exploded/uploads/${a.filePath}" target="_blank">Переглянути файл</a><br>` : ''}
+                        <textarea placeholder="Ваша відповідь" id="answer-${a.assignmentID}">${a.submittedContent || ''}</textarea>
+                        <input type="file" id="file-${a.assignmentID}">
+                        <button onclick="submitAssignment(${a.assignmentID})">Надіслати</button>
+                    </div>
+                `).join('')
+                        : `<div>Немає завдань</div>`;
+
+                    panel.innerHTML = `
+                <h4>Лекції:</h4>
+                ${lecturesHTML}
+                <h4>Завдання:</h4>
+                ${assignmentsHTML}
+            `;
+
+                    container.appendChild(accordionButton);
+                    container.appendChild(panel);
+                });
+            });
+
+    });
+
+    function updatePassword() {
+        const newPassword = document.getElementById("newPassword").value;
+        fetch('/proba_war_exploded/UpdateProfileServlet', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: newPassword})
+        })
+            .then(res => {
+                if (res.ok) alert("Пароль оновлено");
+                else throw new Error();
+            })
+            .catch(() => alert("Не вдалося оновити пароль"));
+    }
+    function submitAssignment(assignmentID) {
+        const content = document.getElementById(`answer-${assignmentID}`).value;
+        const file = document.getElementById(`file-${assignmentID}`).files[0];
+        const formData = new FormData();
+        formData.append("assignmentID", assignmentID);
+        formData.append("content", content);
+        if (file) formData.append("file", file);
+        fetch("/proba_war_exploded/SubmitAssignmentServlet", {
+            method: "POST",
+            body: formData
+        })
+            .then(res => {
+                if (res.ok) alert("Завдання надіслано");
+                else throw new Error();
+            })
+            .catch(() => alert("Помилка при надсиланні"));
+    }
+    document.getElementById("updateProfileForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const fullName = document.getElementById("fullName").value;
+        const email = document.getElementById("email").value;
+        const currentPassword = document.getElementById("currentPassword").value;
+        const newPassword = document.getElementById("newPassword").value;
+
+        const payload = {
+            fullName,
+            email,
+            currentPassword,
+            newPassword
+        };
+
+        fetch("/proba_war_exploded/UpdateProfileServlet", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(res => {
+            if (res.ok) {
+                document.getElementById("updateMessage").innerText = "Дані оновлено!";
+            } else {
+                document.getElementById("updateMessage").innerText = "Помилка оновлення.";
+            }
+        }).catch(() => {
+            document.getElementById("updateMessage").innerText = "Помилка підключення.";
+        });
+    });
+
+    function logout() {
+        fetch('/logout', {
+            method: 'POST'
+        }).then(() => {
+            window.location.href = 'index.jsp';
+        }).catch(() => {
+            alert('Помилка при виході');
+        });
+    }
+</script>
+
+</body>
+</html>

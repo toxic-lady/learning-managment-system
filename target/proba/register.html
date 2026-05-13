@@ -1,0 +1,100 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Реєстрація</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald&family=Lato&display=swap" rel="stylesheet">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: "Lato", sans-serif;
+      background: url('https://static.vecteezy.com/system/resources/previews/034/707/570/non_2x/ai-generated-ancient-greek-temple-free-photo.jpg') center center no-repeat;
+      background-size: cover;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 0.75em;
+      text-decoration: none;
+      color: white;
+      background: none;
+      border: none;
+      padding: 0;
+      font-weight: bold;
+    }
+
+    .form-container {
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .form-box {
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      width: 340px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 1em;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    input {
+      display: block;
+      margin: 0.8em auto;
+      padding: 0.8em;
+      width: 90%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    button {
+      background-color: #F8BF03;
+      color: black;
+      border: none;
+      padding: 0.8em;
+      width: 80%;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 1em;
+    }
+
+    button:hover {
+      background-color: #A39F00;
+      color: white;
+    }
+  </style>
+
+</head>
+<body>
+
+<a href="javascript:history.back()" class="back-button">← Назад</a>
+
+<div class="form-container">
+  <div class="form-box">
+    <h2>Реєстрація</h2>
+    <form action="register" method="post">
+      <input type="text" name="FullName" placeholder="Прізвище та ім'я" required>
+      <input type="email" name="Email" placeholder="Email" required>
+      <input type="password" name="PasswordHash" placeholder="Пароль" required>
+      <button type="submit">Зареєструватися</button>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
